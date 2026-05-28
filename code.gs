@@ -9,9 +9,9 @@
 function getConfig() {
   var props = PropertiesService.getUserProperties();
   return {
-    account:   props.getProperty('SF_ACCOUNT')   || 'A3617057978961-SYB22999',
+    account:   props.getProperty('SF_ACCOUNT')   || '',
     pat:       props.getProperty('SF_PAT')       || '',
-    role:      props.getProperty('SF_ROLE')       || 'ANALYTICS_ROLE',
+    role:      props.getProperty('SF_ROLE')       || '',
     warehouse: props.getProperty('SF_WAREHOUSE')  || '',
     database:  props.getProperty('SF_DATABASE')   || '',
     schema:    props.getProperty('SF_SCHEMA')     || '',
