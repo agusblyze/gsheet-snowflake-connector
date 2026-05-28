@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: 'Google Sans', Arial, sans-serif;
+      font-size: 13px;
+      margin: 0;
+      padding: 12px;
+      color: #202124;
+    }
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 15px;
+      color: #1a73e8;
+    }
+    label {
+      display: block;
+      margin-top: 8px;
+      margin-bottom: 3px;
+      font-weight: 500;
+      font-size: 12px;
+      color: #5f6368;
+    }
+    input[type="text"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 7px 8px;
+      font-size: 13px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: #1a73e8; }
+    textarea {
+      width: 100%;
+      height: 140px;
+      box-sizing: border-box;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      padding: 8px;
+      resize: vertical;
+      outline: none;
+    }
+    textarea:focus { border-color: #1a73e8; }
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: 'Google Sans', Arial, sans-serif;
+    }
+    .btn-primary { background-color: #1a73e8; color: white; }
+    .btn-primary:hover { background-color: #1557b0; }
+    .btn-secondary { background-color: #e8eaed; color: #202124; }
+    .btn-secondary:hover { background-color: #dadce0; }
+    .btn:disabled { background-color: #9aa0a6; color: white; cursor: not-allowed; }
+    .status {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: none;
+    }
+    .status.success { background: #e6f4ea; color: #1e8e3e; display: block; }
+    .status.error   { background: #fce8e6; color: #d93025; display: block; }
+    .status.running { background: #e8f0fe; color: #1a73e8; display: block; }
+
+    /* Saved queries section */
+    .divider {
+      margin: 16px 0 12px 0;
+      border-top: 1px solid #e8eaed;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #202124;
+      margin-bottom: 8px;
+    }
+    .query-card {
+      background: #f8f9fa;
+      border: 1px solid #e8eaed;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .query-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .query-name {
+      font-weight: 600;
+      font-size: 13px;
+      color: #202124;
+      cursor: pointer;
+    }
+    .query-name:hover { color: #1a73e8; }
+    .query-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .query-actions button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .query-actions button:hover { background: #e8eaed; }
+    .btn-run-small { color: #1a73e8; }
+    .btn-delete-small { color: #d93025; }
+
+    /* Toggle switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      font-size: 11px;
+      color: #5f6368;
+    }
+    .toggle {
+      position: relative;
+      width: 34px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #dadce0;
+      border-radius: 18px;
+      transition: 0.2s;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .toggle input:checked + .toggle-slider {
+      background-color: #1a73e8;
+    }
+    .toggle input:checked + .toggle-slider:before {
+      transform: translateX(16px);
+    }
+    .empty-state {
+      color: #9aa0a6;
+      font-size: 12px;
+      font-style: italic;
+      padding: 8px 0;
+    }
+    .sql-preview {
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      color: #5f6368;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .hint {
+      font-size: 11px;
+      color: #5f6368;
+      margin-top: 4px;
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #5f6368;
+    }
+  </style>
+</head>
+<body>
+  <h3>❄️ Snowflake Query</h3>
+
+  <label for="queryName">Query Name</label>
+  <input type="text" id="queryName" placeholder="e.g. Daily Orders">
+  <div class="hint">Tab name will match this name</div>
+
+  <label for="sql">SQL</label>
+  <textarea id="sql" placeholder="SELECT * FROM my_table LIMIT 100;"></textarea>
+
+  <div class="checkbox-row">
+    <input type="checkbox" id="autoRefresh">
+    <label for="autoRefresh" style="margin:0; font-weight:normal;">Enable daily auto-refresh (~6 AM)</label>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="runBtn" onclick="runQuery()">▶ Run & Save</button>
+    <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <!-- Saved Queries -->
+  <div class="divider"></div>
+  <div class="section-title">📋 Saved Queries</div>
+  <div id="savedList"><div class="empty-state">No saved queries yet</div></div>
+
+  <script>
+    // --- Run and save query ---
+    function runQuery() {
+      var name = document.getElementById('queryName').value.trim();
+      var sql = document.getElementById('sql').value.trim();
+      var autoRefresh = document.getElementById('autoRefresh').checked;
+
+      if (!name) { showStatus('Please enter a query name.', 'error'); return; }
+      if (!sql) { showStatus('Please enter a SQL query.', 'error'); return; }
+
+      var btn = document.getElementById('runBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Running…';
+      showStatus('Saving and running query…', 'running');
+
+      // Save first, then run
+      google.script.run
+        .withSuccessHandler(function() {
+          google.script.run
+            .withSuccessHandler(function(msg) {
+              showStatus(msg, 'success');
+              btn.disabled = false;
+              btn.textContent = '▶ Run & Save';
+              loadSavedQueries();
+            })
+            .withFailureHandler(function(err) {
+              showStatus('Error: ' + err.message, 'error');
+              btn.disabled = false;
+              btn.textContent = '▶ Run & Save';
+              loadSavedQueries();
+            })
+            .executeQuery(name, sql);
+        })
+        .withFailureHandler(function(err) {
+          showStatus('Save error: ' + err.message, 'error');
+          btn.disabled = false;
+          btn.textContent = '▶ Run & Save';
+        })
+        .saveQuery(name, sql, autoRefresh);
+    }
+
+    // --- Load saved queries list ---
+    function loadSavedQueries() {
+      google.script.run
+        .withSuccessHandler(renderSavedQueries)
+        .getSavedQueries();
+    }
+
+    function renderSavedQueries(queries) {
+      var el = document.getElementById('savedList');
+      if (!queries || queries.length === 0) {
+        el.innerHTML = '<div class="empty-state">No saved queries yet</div>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < queries.length; i++) {
+        var q = queries[i];
+        var sqlPreview = q.sql.replace(/</g, '&lt;').substring(0, 60);
+        html += '<div class="query-card">';
+        html += '  <div class="query-card-header">';
+        html += '    <span class="query-name" onclick="loadQuery(\'' + escapeJs(q.name) + '\')">' + escapeHtml(q.name) + '</span>';
+        html += '    <div class="query-actions">';
+        html += '      <button class="btn-run-small" onclick="refreshOne(\'' + escapeJs(q.name) + '\', this)" title="Run now">▶</button>';
+        html += '      <button class="btn-delete-small" onclick="deleteSaved(\'' + escapeJs(q.name) + '\')" title="Delete">✕</button>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '  <div class="sql-preview">' + sqlPreview + '…</div>';
+        html += '  <div class="toggle-row">';
+        html += '    <label class="toggle">';
+        html += '      <input type="checkbox" ' + (q.autoRefresh ? 'checked' : '') + ' onchange="toggleRefresh(\'' + escapeJs(q.name) + '\', this.checked)">';
+        html += '      <span class="toggle-slider"></span>';
+        html += '    </label>';
+        html += '    Daily refresh';
+        html += '  </div>';
+        html += '</div>';
+      }
+      el.innerHTML = html;
+    }
+
+    // --- Load a saved query into the editor ---
+    function loadQuery(name) {
+      google.script.run
+        .withSuccessHandler(function(queries) {
+          for (var i = 0; i < queries.length; i++) {
+            if (queries[i].name === name) {
+              document.getElementById('queryName').value = queries[i].name;
+              document.getElementById('sql').value = queries[i].sql;
+              document.getElementById('autoRefresh').checked = queries[i].autoRefresh;
+              break;
+            }
+          }
+        })
+        .getSavedQueries();
+    }
+
+    // --- Refresh a single saved query ---
+    function refreshOne(name, btn) {
+      var origText = btn.textContent;
+      btn.textContent = '⏳';
+      btn.disabled = true;
+      showStatus('Refreshing "' + name + '"…', 'running');
+
+      google.script.run
+        .withSuccessHandler(function(msg) {
+          showStatus(msg, 'success');
+          btn.textContent = origText;
+          btn.disabled = false;
+        })
+        .withFailureHandler(function(err) {
+          showStatus('Error: ' + err.message, 'error');
+          btn.textContent = origText;
+          btn.disabled = false;
+        })
+        .runSavedQuery(name);
+    }
+
+    // --- Toggle auto-refresh ---
+    function toggleRefresh(name, enabled) {
+      google.script.run
+        .withSuccessHandler(function(queries) {
+          renderSavedQueries(queries);
+        })
+        .toggleAutoRefresh(name, enabled);
+    }
+
+    // --- Delete a saved query ---
+    function deleteSaved(name) {
+      if (!confirm('Delete saved query "' + name + '"?')) return;
+      google.script.run
+        .withSuccessHandler(function(queries) {
+          renderSavedQueries(queries);
+          showStatus('Deleted "' + name + '".', 'success');
+        })
+        .deleteQuery(name);
+    }
+
+    // --- Clear form ---
+    function clearForm() {
+      document.getElementById('queryName').value = '';
+      document.getElementById('sql').value = '';
+      document.getElementById('autoRefresh').checked = false;
+      document.getElementById('status').style.display = 'none';
+    }
+
+    // --- Helpers ---
+    function showStatus(msg, type) {
+      var el = document.getElementById('status');
+      el.className = 'status ' + type;
+      el.textContent = msg;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeJs(str) {
+      return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    // Cmd/Ctrl+Enter to run
+    document.getElementById('sql').addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') runQuery();
+    });
+
+    // Load saved queries on open
+    loadSavedQueries();
+  </script>
+</body>
+</html>
