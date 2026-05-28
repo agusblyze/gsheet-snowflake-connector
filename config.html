@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: 'Google Sans', Arial, sans-serif;
+      font-size: 13px;
+      margin: 0;
+      padding: 12px;
+      color: #202124;
+    }
+    h3 {
+      margin: 0 0 12px 0;
+      font-size: 15px;
+      color: #1a73e8;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 3px;
+      font-weight: 500;
+      font-size: 12px;
+      color: #5f6368;
+    }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 7px 8px;
+      font-size: 13px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      outline: none;
+      font-family: 'Google Sans', Arial, sans-serif;
+    }
+    input:focus {
+      border-color: #1a73e8;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 8px 20px;
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: 'Google Sans', Arial, sans-serif;
+      width: 100%;
+    }
+    .btn:hover { background-color: #1557b0; }
+    .btn:disabled { background-color: #9aa0a6; cursor: not-allowed; }
+    .status {
+      margin-top: 12px;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: none;
+    }
+    .status.success { background: #e6f4ea; color: #1e8e3e; display: block; }
+    .status.error   { background: #fce8e6; color: #d93025; display: block; }
+    .hint {
+      font-size: 11px;
+      color: #80868b;
+      margin-top: 2px;
+    }
+    .section-divider {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #e8eaed;
+    }
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #202124;
+      margin-bottom: 4px;
+    }
+    .help-box {
+      margin-top: 14px;
+      padding: 10px;
+      background: #e8f0fe;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #1a73e8;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <h3>⚙️ Snowflake Configuration</h3>
+
+  <div class="section-title">Required</div>
+
+  <label for="account">Account Identifier</label>
+  <input type="text" id="account" placeholder="A3617057978961-SYB22999">
+  <div class="hint">From your Snowflake URL: https://&lt;account&gt;.snowflakecomputing.com</div>
+
+  <label for="pat">Programmatic Access Token (PAT)</label>
+  <input type="password" id="pat" placeholder="paste your token here">
+  <div class="hint">Generate in Snowflake: User menu → Programmatic access tokens → Generate</div>
+
+  <div class="section-divider">
+    <div class="section-title">Optional Defaults</div>
+  </div>
+
+  <label for="warehouse">Warehouse</label>
+  <input type="text" id="warehouse" placeholder="ANALYTICS">
+
+  <label for="database">Database</label>
+  <input type="text" id="database" placeholder="MY_DATABASE">
+
+  <label for="schema">Schema</label>
+  <input type="text" id="schema" placeholder="PUBLIC">
+
+  <label for="role">Role</label>
+  <input type="text" id="role" placeholder="ANALYTICS_ROLE">
+
+  <button class="btn" id="saveBtn" onclick="save()">💾 Save Configuration</button>
+  <div class="status" id="status"></div>
+
+  <div class="help-box">
+    <strong>How to get a PAT:</strong><br>
+    1. Log into Snowflake<br>
+    2. Click your name (bottom-left)<br>
+    3. Select "Programmatic access tokens"<br>
+    4. Click "+ Generate" and copy the token
+  </div>
+
+  <script>
+    // Load existing config on open
+    google.script.run
+      .withSuccessHandler(function(cfg) {
+        document.getElementById('account').value   = cfg.account || '';
+        document.getElementById('warehouse').value = cfg.warehouse || '';
+        document.getElementById('database').value  = cfg.database || '';
+        document.getElementById('schema').value    = cfg.schema || '';
+        document.getElementById('role').value      = cfg.role || '';
+        // PAT is not loaded back for security
+      })
+      .loadConfig();
+
+    function save() {
+      var cfg = {
+        account:   document.getElementById('account').value,
+        pat:       document.getElementById('pat').value,
+        warehouse: document.getElementById('warehouse').value,
+        database:  document.getElementById('database').value,
+        schema:    document.getElementById('schema').value,
+        role:      document.getElementById('role').value,
+      };
+
+      if (!cfg.account || !cfg.pat) {
+        showStatus('Account and PAT are required.', 'error');
+        return;
+      }
+
+      var btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Saving…';
+
+      google.script.run
+        .withSuccessHandler(function(msg) {
+          showStatus(msg, 'success');
+          btn.disabled = false;
+          btn.textContent = '💾 Save Configuration';
+        })
+        .withFailureHandler(function(err) {
+          showStatus('Error: ' + err.message, 'error');
+          btn.disabled = false;
+          btn.textContent = '💾 Save Configuration';
+        })
+        .saveConfig(cfg);
+    }
+
+    function showStatus(msg, type) {
+      var el = document.getElementById('status');
+      el.className = 'status ' + type;
+      el.textContent = msg;
+    }
+  </script>
+</body>
+</html>
