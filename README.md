@@ -72,7 +72,23 @@ Close and reopen the sheet (or refresh the page). The **❄️ Snowflake** menu 
 
 ---
 
-## Snowflake setup — get a Programmatic Access Token (PAT)
+## Snowflake setup
+
+### 1. Create a network policy
+
+Google Apps Script makes requests from Google's IP ranges, which Snowflake may block by default. Create a network policy that allows all IPs and assign it to your user:
+
+```sql
+CREATE NETWORK POLICY GOOGLE_SHEETS_POLICY
+  ALLOWED_IP_LIST = ('0.0.0.0/0')
+  COMMENT = 'Allow all IPs for Google Sheets Apps Script connector';
+
+ALTER USER <your_username> SET NETWORK_POLICY = GOOGLE_SHEETS_POLICY;
+```
+
+Replace `<your_username>` with your Snowflake username. This requires the `SECURITYADMIN` role or higher.
+
+### 2. Get a Programmatic Access Token (PAT)
 
 1. Log into your Snowflake account.
 2. Click your username in the bottom-left corner.
