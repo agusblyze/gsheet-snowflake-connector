@@ -110,6 +110,7 @@ Replace `<your_username>` with your Snowflake username. This requires the `SECUR
 | Database | No | Default database (e.g. `MY_DATABASE`) |
 | Schema | No | Default schema (e.g. `PUBLIC`) |
 | Role | No | Default role (e.g. `ANALYTICS_ROLE`) |
+| Slack Webhook URL | No | Incoming Webhook URL to receive failure alerts (see [Slack notifications](#slack-notifications)) |
 
 3. Click **💾 Save Configuration**.
 
@@ -134,3 +135,22 @@ When saving a query, check **Auto-refresh daily**. The script will automatically
 ### Refresh all queries manually
 
 Click **❄️ Snowflake → 🔄 Refresh All** to re-run every saved query that has auto-refresh enabled.
+
+---
+
+## Slack notifications
+
+When a query fails during auto-refresh, the connector will post a Slack message listing every query that failed and how many attempts were made.
+
+Failed queries are retried up to **3 times** with a **3-second pause** between attempts. The Slack alert fires only after all retries are exhausted.
+
+### Set up a Slack Incoming Webhook
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) and click **Create New App → From scratch**.
+2. Name the app (e.g. `Snowflake Alerts`) and select your workspace.
+3. In the left sidebar, go to **Incoming Webhooks** and toggle it **On**.
+4. Click **Add New Webhook to Workspace**, choose the channel where alerts should appear, and click **Allow**.
+5. Copy the webhook URL — it looks like `https://hooks.slack.com/services/T.../B.../...`
+6. Open **❄️ Snowflake → ⚙️ Configure** in your spreadsheet, paste the URL into the **Slack Webhook URL** field, and save.
+
+If the field is left blank, Slack notifications are disabled and the behavior is unchanged.
