@@ -117,6 +117,14 @@
   <label for="role">Role</label>
   <input type="text" id="role" placeholder="ANALYTICS_ROLE">
 
+  <div class="section-divider">
+    <div class="section-title">Notifications</div>
+  </div>
+
+  <label for="slackWebhook">Slack Incoming Webhook URL</label>
+  <input type="text" id="slackWebhook" placeholder="https://hooks.slack.com/services/…">
+  <div class="hint">If set, a Slack message is sent when an auto-refresh query fails after all retries.</div>
+
   <button class="btn" id="saveBtn" onclick="save()">💾 Save Configuration</button>
   <div class="status" id="status"></div>
 
@@ -132,23 +140,25 @@
     // Load existing config on open
     google.script.run
       .withSuccessHandler(function(cfg) {
-        document.getElementById('account').value   = cfg.account || '';
-        document.getElementById('warehouse').value = cfg.warehouse || '';
-        document.getElementById('database').value  = cfg.database || '';
-        document.getElementById('schema').value    = cfg.schema || '';
-        document.getElementById('role').value      = cfg.role || '';
+        document.getElementById('account').value      = cfg.account || '';
+        document.getElementById('warehouse').value    = cfg.warehouse || '';
+        document.getElementById('database').value     = cfg.database || '';
+        document.getElementById('schema').value       = cfg.schema || '';
+        document.getElementById('role').value         = cfg.role || '';
+        document.getElementById('slackWebhook').value = cfg.slackWebhook || '';
         // PAT is not loaded back for security
       })
       .loadConfig();
 
     function save() {
       var cfg = {
-        account:   document.getElementById('account').value,
-        pat:       document.getElementById('pat').value,
-        warehouse: document.getElementById('warehouse').value,
-        database:  document.getElementById('database').value,
-        schema:    document.getElementById('schema').value,
-        role:      document.getElementById('role').value,
+        account:      document.getElementById('account').value,
+        pat:          document.getElementById('pat').value,
+        warehouse:    document.getElementById('warehouse').value,
+        database:     document.getElementById('database').value,
+        schema:       document.getElementById('schema').value,
+        role:         document.getElementById('role').value,
+        slackWebhook: document.getElementById('slackWebhook').value,
       };
 
       if (!cfg.account || !cfg.pat) {

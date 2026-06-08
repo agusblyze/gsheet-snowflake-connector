@@ -267,6 +267,9 @@
     function loadSavedQueries() {
       google.script.run
         .withSuccessHandler(renderSavedQueries)
+        .withFailureHandler(function(err) {
+          showStatus('Could not load saved queries: ' + err.message, 'error');
+        })
         .getSavedQueries();
     }
 
@@ -315,6 +318,9 @@
             }
           }
         })
+        .withFailureHandler(function(err) {
+          showStatus('Could not load query: ' + err.message, 'error');
+        })
         .getSavedQueries();
     }
 
@@ -345,6 +351,10 @@
         .withSuccessHandler(function(queries) {
           renderSavedQueries(queries);
         })
+        .withFailureHandler(function(err) {
+          showStatus('Could not update auto-refresh: ' + err.message, 'error');
+          loadSavedQueries(); // re-render to revert the toggle visually
+        })
         .toggleAutoRefresh(name, enabled);
     }
 
@@ -355,6 +365,9 @@
         .withSuccessHandler(function(queries) {
           renderSavedQueries(queries);
           showStatus('Deleted "' + name + '".', 'success');
+        })
+        .withFailureHandler(function(err) {
+          showStatus('Could not delete query: ' + err.message, 'error');
         })
         .deleteQuery(name);
     }

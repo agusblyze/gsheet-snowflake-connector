@@ -9,12 +9,13 @@
 function getConfig() {
   var props = PropertiesService.getUserProperties();
   return {
-    account:   props.getProperty('SF_ACCOUNT')   || '',
-    pat:       props.getProperty('SF_PAT')       || '',
-    role:      props.getProperty('SF_ROLE')       || '',
-    warehouse: props.getProperty('SF_WAREHOUSE')  || '',
-    database:  props.getProperty('SF_DATABASE')   || '',
-    schema:    props.getProperty('SF_SCHEMA')     || '',
+    account:      props.getProperty('SF_ACCOUNT')       || '',
+    pat:          props.getProperty('SF_PAT')           || '',
+    role:         props.getProperty('SF_ROLE')           || '',
+    warehouse:    props.getProperty('SF_WAREHOUSE')      || '',
+    database:     props.getProperty('SF_DATABASE')       || '',
+    schema:       props.getProperty('SF_SCHEMA')         || '',
+    slackWebhook: props.getProperty('SLACK_WEBHOOK')     || '',
   };
 }
 
@@ -50,12 +51,13 @@ function showConfig() {
 function saveConfig(cfg) {
   var props = PropertiesService.getUserProperties();
   props.setProperties({
-    SF_ACCOUNT:   cfg.account.trim(),
-    SF_PAT:       cfg.pat.trim(),
-    SF_WAREHOUSE: cfg.warehouse.trim(),
-    SF_DATABASE:  cfg.database.trim(),
-    SF_SCHEMA:    cfg.schema.trim(),
-    SF_ROLE:      cfg.role.trim(),
+    SF_ACCOUNT:    cfg.account.trim(),
+    SF_PAT:        cfg.pat.trim(),
+    SF_WAREHOUSE:  cfg.warehouse.trim(),
+    SF_DATABASE:   cfg.database.trim(),
+    SF_SCHEMA:     cfg.schema.trim(),
+    SF_ROLE:       cfg.role.trim(),
+    SLACK_WEBHOOK: cfg.slackWebhook ? cfg.slackWebhook.trim() : '',
   });
   return 'Configuration saved!';
 }
@@ -63,11 +65,12 @@ function saveConfig(cfg) {
 function loadConfig() {
   var props = PropertiesService.getUserProperties();
   return {
-    account:   props.getProperty('SF_ACCOUNT')   || 'A3617057978961-SYB22999',
-    warehouse: props.getProperty('SF_WAREHOUSE')  || '',
-    database:  props.getProperty('SF_DATABASE')   || '',
-    schema:    props.getProperty('SF_SCHEMA')     || '',
-    role:      props.getProperty('SF_ROLE')       || 'ANALYTICS_ROLE',
+    account:      props.getProperty('SF_ACCOUNT')    || '',
+    warehouse:    props.getProperty('SF_WAREHOUSE')   || '',
+    database:     props.getProperty('SF_DATABASE')    || '',
+    schema:       props.getProperty('SF_SCHEMA')      || '',
+    role:         props.getProperty('SF_ROLE')         || '',
+    slackWebhook: props.getProperty('SLACK_WEBHOOK')   || '',
   };
 }
 
@@ -178,24 +181,60 @@ function syncDailyTrigger() {
   }
 }
 
+var REFRESH_MAX_RETRIES = 3;
+var REFRESH_RETRY_DELAY_MS = 3000;
+
+// ---------- SLACK NOTIFICATIONS ----------
+
+function sendSlackNotification(text) {
+  var webhook = getConfig().slackWebhook;
+  if (!webhook) return;
+  UrlFetchApp.fetch(webhook, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ text: text }),
+    muteHttpExceptions: true,
+  });
+}
+
 // Refresh all queries that have autoRefresh enabled
 function refreshAllQueries() {
   var queries = getSavedQueries();
   var errors = [];
 
   for (var i = 0; i < queries.length; i++) {
-    if (queries[i].autoRefresh) {
+    if (!queries[i].autoRefresh) continue;
+
+    var lastError = null;
+    for (var attempt = 1; attempt <= REFRESH_MAX_RETRIES; attempt++) {
       try {
         var result = runSnowflakeQuery(queries[i].sql);
         writeResultsToSheet(result, queries[i].name);
+        lastError = null;
+        break;
       } catch (e) {
-        errors.push(queries[i].name + ': ' + e.message);
+        lastError = e;
+        Logger.log('Query "' + queries[i].name + '" failed (attempt ' + attempt + '/' + REFRESH_MAX_RETRIES + '): ' + e.message);
+        if (attempt < REFRESH_MAX_RETRIES) {
+          Utilities.sleep(REFRESH_RETRY_DELAY_MS);
+        }
       }
+    }
+
+    if (lastError) {
+      errors.push(queries[i].name + ': ' + lastError.message + ' (failed after ' + REFRESH_MAX_RETRIES + ' attempts)');
     }
   }
 
   if (errors.length > 0) {
-    Logger.log('Refresh errors: ' + errors.join('; '));
+    var msg = 'Snowflake refresh errors:\n' + errors.join('\n');
+    Logger.log(msg);
+    sendSlackNotification(':snowflake: *Snowflake Auto-Refresh Failed*\n' + errors.join('\n'));
+    try {
+      SpreadsheetApp.getUi().alert('❄️ Snowflake Auto-Refresh', msg, SpreadsheetApp.getUi().ButtonSet.OK);
+    } catch (uiErr) {
+      // UI unavailable when triggered headlessly — errors are in Logger
+    }
   }
 }
 
